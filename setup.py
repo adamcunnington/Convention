@@ -6,6 +6,5 @@ setuptools.setup(
     author="Adam Cunnington",
     author_email="ac@adamcunnington.info",
     packages=setuptools.find_packages(),
-    py_modules=[],
-    install_requires=["flask"]
+    install_requires=["flask", "flask-sqlalchemy", "flask-oauthlib"]
 )
