@@ -20,13 +20,14 @@ allowables = db.Table("Convention_AllowableValue",
 class Convention(db.Model):
     __tablename__ = "Convention"
 
-    convention_key = db.Column("ConventionKey", db.Integer, primary_key=True)
+    key = db.Column("ConventionKey", db.Integer, primary_key=True)
     name = db.Column("ConventionName", db.String(50), unique=True, nullable=False)
     _pattern = db.Column("ConventionPattern", db.String(255), nullable=False)
     allowable_values = db.relationship("AllowableValue", secondary=allowables, lazy="dynamic")
 
     def __init__(self, name, pattern, is_regex=False, allowable_values=None):
         self.name = name
+        # check that the allowable value parts actually match the string
         if allowable_values is not None:
             for group, names in allowable_values.items():
                 for name in names:
@@ -50,7 +51,7 @@ class Convention(db.Model):
         for allowable_value in self.allowable_values:
             allowable_values[allowable_value.group].append(allowable_value.name)
         return {
-            Convention.convention_key.name: self.convention_key,
+            Convention.key.name: self.key,
             Convention.name.name: self.name,
             Convention._pattern.name: self._pattern,
             "Allowable Values": allowable_values
@@ -74,7 +75,7 @@ class Convention(db.Model):
 class AllowableValue(db.Model):
     __tablename__ = "AllowableValue"
 
-    allowable_value_key = db.Column("AllowableValueKey", db.Integer, primary_key=True)
+    key = db.Column("AllowableValueKey", db.Integer, primary_key=True)
     group = db.Column("AllowableValueGroup", db.String(50), nullable=False)
     name = db.Column("AllowableValueName", db.String(100), nullable=False)
 
