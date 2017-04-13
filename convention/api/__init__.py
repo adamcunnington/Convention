@@ -1,4 +1,7 @@
 import flask
 
+import convention
 
-api = flask.Blueprint("api", __name__)
+
+blueprint = flask.Blueprint("api", __name__)
+convention.app.register_blueprint(blueprint, url_prefix="/api")
