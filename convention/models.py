@@ -57,6 +57,9 @@ class Convention(db.Model):
             "Allowable Values": allowable_values
         }
 
+    def get_url(self):
+        return flask.url_for("api.get_convention", key=self.key)
+
     def set_pattern(self, pattern, is_regex=False):
         self._pattern = pattern if is_regex else fnmatch.translate(pattern)
         self._init_on_load()
