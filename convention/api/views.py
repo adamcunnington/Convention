@@ -5,7 +5,7 @@ from convention import api, models
 
 
 def _get_convention(convention_key):
-    return models.Convention.query.filter_by(key=convention_key).get_or_404()
+    return models.Convention.query.get_or_404(convention_key)
 
 
 @api.blueprint.route("/conventions/", methods=["POST"])

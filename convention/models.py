@@ -2,6 +2,7 @@ import collections
 import fnmatch
 import re
 
+import flask
 import flask_sqlalchemy
 
 import convention
@@ -58,7 +59,7 @@ class Convention(db.Model):
         }
 
     def get_url(self):
-        return flask.url_for("api.get_convention", key=self.key)
+        return flask.url_for("api.get_convention", convention_key=self.key, _external=True)
 
     def set_pattern(self, pattern, is_regex=False):
         self._pattern = pattern if is_regex else fnmatch.translate(pattern)
