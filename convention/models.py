@@ -1,8 +1,10 @@
 import collections
+import datetime
 import fnmatch
 import re
 
 import flask
+import flask_login
 import flask_sqlalchemy
 
 import convention
@@ -18,6 +20,20 @@ allowables = db.Table("Convention_AllowableValue",
                       db.PrimaryKeyConstraint("ConventionKey", "AllowableValueKey"))
 
 
+class AllowableValue(db.Model):
+    __tablename__ = "AllowableValue"
+
+    key = db.Column("AllowableValueKey", db.Integer, primary_key=True)
+    group = db.Column("AllowableValueGroup", db.String(50), nullable=False)
+    name = db.Column("AllowableValueName", db.String(100), nullable=False)
+
+    __table_args__ = (db.UniqueConstraint("AllowableValueGroup", "AllowableValueName"), )
+
+    def __init__(self, group, name):
+        self.group = group
+        self.name = name
+
+
 class Convention(db.Model):
     __tablename__ = "Convention"
 
@@ -28,7 +44,7 @@ class Convention(db.Model):
 
     def __init__(self, name, pattern, is_regex=False, allowable_values=None):
         self.name = name
-        # check that the allowable value parts actually match the string
+        # check that the allowable value parts actually match the string?
         if allowable_values is not None:
             for group, names in allowable_values.items():
                 for name in names:
@@ -76,15 +92,17 @@ class Convention(db.Model):
         return True
 
 
-class AllowableValue(db.Model):
-    __tablename__ = "AllowableValue"
+class User(db.Model, flask_login.UserMixin):
+    __tablename__ = "User"
 
-    key = db.Column("AllowableValueKey", db.Integer, primary_key=True)
-    group = db.Column("AllowableValueGroup", db.String(50), nullable=False)
-    name = db.Column("AllowableValueName", db.String(100), nullable=False)
-
-    __table_args__ = (db.UniqueConstraint("AllowableValueGroup", "AllowableValueName"), )
-
-    def __init__(self, group, name):
-        self.group = group
-        self.name = name
+    key = db.Column("UserKey", db.Integer, primary_key=True)
+    email = db.Column("UserEmail", db.String(320), index=True, unique=True, nullable=False)
+    password_hash = db.Column("UserPasswordHash", db.String(128))
+    first_name = db.Column("UserFirstName", db.String(35))
+    last_name = db.Column("UserLastName", db.String(35))
+    avatar = db.Column("UserAvatar", db.String(255))
+    social_ID = db.Column("UserSocialID", db.Integer)
+    is_active = db.Column("UserIsActive", db.Boolean, default=True)
+    created_on_utc = db.Column("UserCreatedOnUTC", db.DateTime, default=datetime.datetime.utcnow, nullable=False)
+    last_updated_utc = db.Column("UserLastUpdatedUTC", db.DateTime, default=datetime.datetime.utcnow,
+                                 onupdate=datetime.datetime.utcnow, nullable=False)
