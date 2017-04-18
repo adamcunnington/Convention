@@ -2,7 +2,7 @@ import flask
 import flask_login
 
 import convention
-from convention import auth, models
+from convention import auth, forms, models
 
 
 @convention.app.route("/")
@@ -10,12 +10,22 @@ def index():
     return "Hello, World!"
 
 
-@convention.app.route("/register")
+@convention.app.route("/register", methods=("GET", "POST"))
 def register():
     if flask_login.current_user.is_authenticated:
         flask.flash("You are already registered and logged in.")
         return flask.redirect(flask.url_for("auth.users_index"))
-    return flask.render_template("register.html")
+    register_form = forms.RegisterForm()
+    if register_form.validate_on_submit():
+        if models.User.query.filter_by(email=register_form.email.data).first() is not None:
+            flask.flash("That email is already registered.")
+            return flask.redirect(flask.url_for("register"))
+        user = models.User(**register_form.data)
+        models.db.session.add(user)
+        models.db.session.commit()
+        flask_login.login_user(user, remember=True)
+        return flask.redirect(flask.url_for("auth.users_index"))
+    return flask.render_template("register.html", form=register_form)
 
 
 @convention.app.route("/login")

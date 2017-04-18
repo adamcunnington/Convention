@@ -6,5 +6,14 @@ setuptools.setup(
     author="Adam Cunnington",
     author_email="ac@adamcunnington.info",
     packages=setuptools.find_packages(),
-    install_requires=["flask", "flask-sqlalchemy", "flask-oauthlib", "flask-login", "flask-oauthlib", "flask_httpauth", "wrapt"]
+    install_requires=[
+        "flask",
+        "flask_httpauth",
+        "flask-login",
+        "flask-sqlalchemy",
+        "flask-oauthlib",
+        "flask-wtf",
+        "wrapt",
+        "wtforms"
+    ]
 )
