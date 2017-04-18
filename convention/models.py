@@ -100,9 +100,11 @@ class User(db.Model, flask_login.UserMixin):
     password_hash = db.Column("UserPasswordHash", db.String(128))
     first_name = db.Column("UserFirstName", db.String(35))
     last_name = db.Column("UserLastName", db.String(35))
-    avatar = db.Column("UserAvatar", db.String(255))
-    social_ID = db.Column("UserSocialID", db.Integer)
+    avatar_url = db.Column("UserAvatarURL", db.String(255))
     is_active = db.Column("UserIsActive", db.Boolean, default=True)
     created_on_utc = db.Column("UserCreatedOnUTC", db.DateTime, default=datetime.datetime.utcnow, nullable=False)
     last_updated_utc = db.Column("UserLastUpdatedUTC", db.DateTime, default=datetime.datetime.utcnow,
                                  onupdate=datetime.datetime.utcnow, nullable=False)
+
+    def get_id(self):
+        return self.key
