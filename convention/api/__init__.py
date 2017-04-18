@@ -3,7 +3,7 @@ import flask_httpauth
 
 
 blueprint = flask.Blueprint("api", __name__)
-token_auth = flask_httpauth.HTTPTokenAuth(scheme="token")
+token_auth = flask_httpauth.HTTPBasicAuth()
 
 
 @blueprint.before_request

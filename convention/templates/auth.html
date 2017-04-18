@@ -1,9 +1,9 @@
 <html>
     <head>
-        <title>Convention | Users</title>
+        <title>Convention | Auth</title>
     </head>
     <body>
-        <h1>Users Login</h1>
+        <h1>Login</h1>
         {% for message in get_flashed_messages() %}
             <p><b>Error</b>: {{ message }}</p>
         {% endfor %}
@@ -12,7 +12,7 @@
             <p><a href="{{ url_for('logout') }}">Logout</a></p>
         {% else %}
             <h2>I don't know you!</h2>
-            <p><a href="{{ url_for('register') }}">Register</a> or <a href="{{ url_for('login_form') }}">Login with Site</a></p>
+            <p><a href="{{ url_for('register') }}">Register</a> or <a href="{{ url_for('login') }}">Login with Site</a></p>
             <p><a href="{{ url_for('authorise', provider='facebook') }}">Login with Facebook</a></p>
             <p><a href="{{ url_for('authorise', provider='google') }}">Login with Google</a></p>
         {% endif %}
