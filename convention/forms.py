@@ -25,5 +25,9 @@ class LoginForm(flask_wtf.Form, _PasswordField, _EmailField):
     pass
 
 
-class EditProfileForm(flask_wtf.Form, _EditableFields, _PasswordField):
+class ChangePasswordForm(flask_wtf.Form, _PasswordField):
+    pass
+
+
+class EditProfileForm(flask_wtf.Form, _EditableFields):
     pass

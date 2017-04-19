@@ -3,9 +3,11 @@ import datetime
 import fnmatch
 import re
 
+from werkzeug import security
 import flask
 import flask_login
 import flask_sqlalchemy
+import itsdangerous
 
 import convention
 
@@ -106,5 +108,33 @@ class User(db.Model, flask_login.UserMixin):
     last_updated_utc = db.Column("UserLastUpdatedUTC", db.DateTime, default=datetime.datetime.utcnow,
                                  onupdate=datetime.datetime.utcnow, nullable=False)
 
+    @property
+    def password(self):
+        raise AttributeError("Password is not a readable attribute.")
+
+    @password.setter
+    def password(self, password):
+        self.password_hash = security.generate_password_hash(password)
+
+    @property
+    def registered(self):
+        return self.password_hash is not None
+
+    @staticmethod
+    def verify_auth_token(token):
+        serialiser = itsdangerous.TimedJSONWebSignatureSerializer(convention.app.config["SECRET_KEY"])
+        try:
+            data = serialiser.loads(token)
+        except (itsdangerous.BadSignature, itsdangerous.SignatureExpired):
+            return None
+        return User.query.get(data["UserKey"])
+
+    def generate_auth_token(self, expires_in=3600):
+        serialiser = itsdangerous.TimedJSONWebSignatureSerializer(convention.app.config["SECRET_KEY"], expires_in=expires_in)
+        return serialiser.dumps({"UserKey": self.key}).decode("UTF-8")
+
     def get_id(self):
         return self.key
+
+    def verify_password(self, password):
+        return security.check_password_hash(self.password_hash, password)

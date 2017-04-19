@@ -43,8 +43,15 @@ def login_form():
         return flask.redirect(flask.url_for("auth.auth_index"))
     login_form = forms.LoginForm()
     if login_form.validate_on_submit():
-        pass
-    return flask.render_template("login.html")
+        user = models.User.query.filter_by(email=login_form.email.data).first()
+        if user is None:
+            flask.flash("That email is not registered.")
+        else:
+            if user.verify_password(login_form.password.data):
+                flask_login.login_user(user, remember=True)
+                return flask.redirect(flask.url_for("auth.auth_index"))
+            flask.flash("Invalid password.")
+    return flask.render_template("login.html", form=login_form)
 
 
 @convention.app.route("/authorise/<provider>")
@@ -92,11 +99,37 @@ def auth_index():
     return "Welcome Back!"
 
 
-@auth.blueprint.route("/edit-profile", methods=("GET", "POST"))
-def edit_profile():
-    if flask_login.current_user.password_hash is None:
+@auth.blueprint.route("/change-password", methods=("GET", "POST"))
+def change_password():
+    if not flask_login.registered:
         flask.flash("You must be a registered user to edit your profile.")
         return flask.redirect(flask.url_for("auth.auth_index"))
+    edit_profile_form = forms.EditProfileForm()
+    if edit_profile_form.validate_on_submit():
+        flask.current_user.password = edit_profile_form.password.data
+        models.db.session.add(flask.current_user)
+        models.db.session.commit()
+        return flask.redirect(flask.url_for("auth.auth_index"))
+    return flask.render_template("edit-profile.html", form=edit_profile_form)
+
+
+@auth.blueprint.route("/edit-profile", methods=("GET", "POST"))
+def edit_profile():
+    if not flask_login.registered:
+        flask.flash("You must be a registered user to edit your profile.")
+        return flask.redirect(flask.url_for("auth.auth_index"))
+    edit_profile_form = forms.EditProfileForm()
+    if edit_profile_form.validate_on_submit():
+        flask.current_user.first_name = edit_profile_form.first_name.data
+        flask.current_user.last_name = edit_profile_form.last_name.data
+        flask.current_user.avatar_url = edit_profile_form.avatar_url.data
+        models.db.session.add(flask.current_user)
+        models.db.session.commit()
+        return flask.redirect(flask.url_for("auth.auth_index"))
+    edit_profile_form.first_name.data = flask.current_user.first_name
+    edit_profile_form.last_name.data = flask.current_user.last_name
+    edit_profile_form.avatar_url.data = flask.current_user.avatar_url
+    return flask.render_template("edit-profile.html", form=edit_profile_form)
 
 
 convention.app.register_blueprint(auth.blueprint, url_prefix="/auth")
