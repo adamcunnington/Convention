@@ -11,14 +11,8 @@ class OAuthProvider(object):
     _RESPONSE_MAPPING = {}
 
     def __init__(self, name, oauth):
-        self.service = oauth.remote_app(
-            name,
-            app_key=name,
-            access_token_method=self._ACCESS_TOKEN_METHOD,
-            access_token_url=self._ACCESS_TOKEN_URL,
-            authorize_url=self._AUTHORISE_URL,
-            base_url=self._BASE_URL,
-            request_token_params=self._REQUEST_TOKEN_PARAMS)
+        self.service = oauth.remote_app(name, app_key=name, access_token_method=self._ACCESS_TOKEN_METHOD, access_token_url=self._ACCESS_TOKEN_URL,
+                                        authorize_url=self._AUTHORISE_URL, base_url=self._BASE_URL, request_token_params=self._REQUEST_TOKEN_PARAMS)
 
     def authorise(self):
         return self.service.authorize(callback=self.callback_url, _external=True)

@@ -4,7 +4,7 @@ from wtforms import validators
 
 
 class _PasswordField(object):
-    password = wtforms.PasswordField("password", validators=(validators.DataRequired()))
+    password = wtforms.PasswordField("password", validators=(validators.DataRequired(), ))
 
 
 class _EmailField(object):
@@ -17,13 +17,17 @@ class _EditableFields(object):
     avatar_url = wtforms.StringField("avatar_url", validators=(validators.URL, validators.Length(max=500)))
 
 
-class RegisterForm(flask_wtf.Form, _PasswordField, _EmailField, _EditableFields):
+class RegisterForm(flask_wtf.FlaskForm, _PasswordField, _EmailField, _EditableFields):
     pass
 
 
-class LoginForm(flask_wtf.Form, _PasswordField, _EmailField):
+class LoginForm(flask_wtf.FlaskForm, _PasswordField, _EmailField):
     pass
 
 
-class EditProfileForm(flask_wtf.Form, _EditableFields, _PasswordField):
+class ChangePasswordForm(flask_wtf.FlaskForm, _PasswordField):
+    pass
+
+
+class EditProfileForm(flask_wtf.FlaskForm, _EditableFields):
     pass
