@@ -8,5 +8,5 @@ token_auth = flask_httpauth.HTTPBasicAuth()
 
 @blueprint.before_request
 @token_auth.login_required
-def before_request():
+def _before_request():
     pass

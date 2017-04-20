@@ -21,10 +21,10 @@ oauth_providers = {
 
 @blueprint.before_request
 @flask_login.login_required
-def before_request():
+def _before_request():
     pass
 
 
 @login_manager.user_loader
-def load_user(user_key):
+def _load_user(user_key):
     return models.User.query.get(int(user_key))
