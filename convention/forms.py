@@ -25,17 +25,9 @@ class LoginForm(flask_wtf.FlaskForm, _PasswordField, _EmailField):
     pass
 
 
-<<<<<<< HEAD
 class ChangePasswordForm(flask_wtf.FlaskForm, _PasswordField):
     pass
 
 
 class EditProfileForm(flask_wtf.FlaskForm, _EditableFields):
-=======
-class ChangePasswordForm(flask_wtf.Form, _PasswordField):
-    pass
-
-
-class EditProfileForm(flask_wtf.Form, _EditableFields):
->>>>>>> origin/master
     pass

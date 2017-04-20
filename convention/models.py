@@ -110,11 +110,7 @@ class User(db.Model, flask_login.UserMixin):
 
     @property
     def password(self):
-<<<<<<< HEAD
         raise AttributeError("Password is not a readable attribute")
-=======
-        raise AttributeError("Password is not a readable attribute.")
->>>>>>> origin/master
 
     @password.setter
     def password(self, password):

@@ -46,15 +46,9 @@ def login():
         else:
             if user.verify_password(login_form.password.data):
                 flask_login.login_user(user, remember=True)
-<<<<<<< HEAD
                 return flask.redirect(flask.url_for("auth.users_index"))
             flask.flash("Invalid password.")
     return flask.render_template("login.html")
-=======
-                return flask.redirect(flask.url_for("auth.auth_index"))
-            flask.flash("Invalid password.")
-    return flask.render_template("login.html", form=login_form)
->>>>>>> origin/master
 
 
 @convention.app.route("/authorise/<provider>")
@@ -105,7 +99,6 @@ def users_index():
 
 @auth.blueprint.route("/change-password", methods=("GET", "POST"))
 def change_password():
-<<<<<<< HEAD
     if not flask_login.current_user.registered:
         flask.flash("You must be a registered user to edit your profile.")
         return flask.redirect(flask.url_for("auth.users_index"))
@@ -116,23 +109,10 @@ def change_password():
         models.db.session.commit()
         return flask.redirect(flask.url_for("auth.users_index"))
     return flask.render_template("edit-profile.html", form=change_password_form)
-=======
-    if not flask_login.registered:
-        flask.flash("You must be a registered user to edit your profile.")
-        return flask.redirect(flask.url_for("auth.auth_index"))
-    edit_profile_form = forms.EditProfileForm()
-    if edit_profile_form.validate_on_submit():
-        flask.current_user.password = edit_profile_form.password.data
-        models.db.session.add(flask.current_user)
-        models.db.session.commit()
-        return flask.redirect(flask.url_for("auth.auth_index"))
-    return flask.render_template("edit-profile.html", form=edit_profile_form)
->>>>>>> origin/master
 
 
 @auth.blueprint.route("/edit-profile", methods=("GET", "POST"))
 def edit_profile():
-<<<<<<< HEAD
     if not flask_login.current_user.registered:
         flask.flash("You must be a registered user to edit your profile.")
         return flask.redirect(flask.url_for("auth.users_index"))
@@ -147,22 +127,6 @@ def edit_profile():
     edit_profile_form.first_name.data = flask_login.current_user.first_name
     edit_profile_form.last_name.data = flask_login.current_user.last_name
     edit_profile_form.avatar_url.data = flask_login.current_user.avatar_url
-=======
-    if not flask_login.registered:
-        flask.flash("You must be a registered user to edit your profile.")
-        return flask.redirect(flask.url_for("auth.auth_index"))
-    edit_profile_form = forms.EditProfileForm()
-    if edit_profile_form.validate_on_submit():
-        flask.current_user.first_name = edit_profile_form.first_name.data
-        flask.current_user.last_name = edit_profile_form.last_name.data
-        flask.current_user.avatar_url = edit_profile_form.avatar_url.data
-        models.db.session.add(flask.current_user)
-        models.db.session.commit()
-        return flask.redirect(flask.url_for("auth.auth_index"))
-    edit_profile_form.first_name.data = flask.current_user.first_name
-    edit_profile_form.last_name.data = flask.current_user.last_name
-    edit_profile_form.avatar_url.data = flask.current_user.avatar_url
->>>>>>> origin/master
     return flask.render_template("edit-profile.html", form=edit_profile_form)
 
 
