@@ -99,7 +99,7 @@ def users_index():
 
 @auth.blueprint.route("/change-password", methods=("GET", "POST"))
 def change_password():
-    if not flask_login.registered:
+    if not flask_login.current_user.registered:
         flask.flash("You must be a registered user to edit your profile.")
         return flask.redirect(flask.url_for("auth.users_index"))
     change_password_form = forms.ChangePasswordForm()
@@ -113,7 +113,7 @@ def change_password():
 
 @auth.blueprint.route("/edit-profile", methods=("GET", "POST"))
 def edit_profile():
-    if not flask_login.registered:
+    if not flask_login.current_user.registered:
         flask.flash("You must be a registered user to edit your profile.")
         return flask.redirect(flask.url_for("auth.users_index"))
     edit_profile_form = forms.EditProfileForm()
