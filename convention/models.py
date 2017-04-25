@@ -16,23 +16,31 @@ convention.app.config["SQLALCHEMY_DATABASE_URI"] = r"sqlite:///C:\Python Project
 db = flask_sqlalchemy.SQLAlchemy(convention.app)
 
 
-allowables = db.Table("Convention_AllowableValue",
-                      db.Column("ConventionKey", db.Integer, db.ForeignKey("Convention.ConventionKey")),
-                      db.Column("AllowableValueKey", db.Integer, db.ForeignKey("AllowableValue.AllowableValueKey")),
-                      db.PrimaryKeyConstraint("ConventionKey", "AllowableValueKey"))
+class ConventionException(Exception):
+    pass
+
+
+class Convention_AllowableValue(db.Model):
+    __tablename__ = "Convention_AllowableValue"
+
+    key = db.Column("Convention_AllowableValueKey", db.Integer, primary_key=True)
+    convention_key = db.Column("ConventionKey", db.Integer, db.ForeignKey("Convention.ConventionKey"), nullable=False)
+    allowable_value_key = db.Column("AllowableValueKey", db.Integer, db.ForeignKey("AllowableValue.AllowableValueKey"), nullable=False)
+    group_name = db.Column("AllowableValueGroupName", db.String(50))
+    group_number = db.Column("AllowableValueGroupNumber", db.SmallInteger, nullable=False)
+    combination_ID = db.Column("AllowableValueCombinationID", db.Integer)
+    allowable_value = db.relationship("AllowableValue")
+
+    __tableargs__ = (db.UniqueConstraint("ConventionKey", "AllowableValueKey", "AllowableValueGroupNumber", "AllowableValueCombinationID"), )
 
 
 class AllowableValue(db.Model):
     __tablename__ = "AllowableValue"
 
     key = db.Column("AllowableValueKey", db.Integer, primary_key=True)
-    group = db.Column("AllowableValueGroup", db.String(50), nullable=False)
-    name = db.Column("AllowableValueName", db.String(100), nullable=False)
+    name = db.Column("AllowableValueName", db.String(100), unique=True, nullable=False)
 
-    __table_args__ = (db.UniqueConstraint("AllowableValueGroup", "AllowableValueName"), )
-
-    def __init__(self, group, name):
-        self.group = group
+    def __init__(self, name):
         self.name = name
 
 
@@ -40,18 +48,26 @@ class Convention(db.Model):
     __tablename__ = "Convention"
 
     key = db.Column("ConventionKey", db.Integer, primary_key=True)
-    name = db.Column("ConventionName", db.String(50), unique=True, nullable=False)
-    _pattern = db.Column("ConventionPattern", db.String(255), nullable=False)
-    allowable_values = db.relationship("AllowableValue", secondary=allowables, lazy="dynamic")
+    user_key = db.Column("UserKey", db.Integer, db.ForeignKey("User.UserKey"), nullable=False)
+    name = db.Column("ConventionName", db.String(50), nullable=False)
+    _pattern = db.Column("ConventionPattern", db.String(1000), nullable=False)
+    combinations_restricted = db.Column("ConventionCombinationsRestricted", db.Boolean, nullable=False)
+    user = db.relationship("User")
+    allowable_values = db.relationship("Convention_AllowableValue", lazy="dynamic", cascade="all, delete, delete-orphan")  # cascade options required?
 
-    def __init__(self, name, pattern, is_regex=False, allowable_values=None):
+    __tableargs__ = (db.UniqueConstraint("UserKey", "ConventionName"), )
+
+    def __init__(self, name, user, pattern, is_regex=False, allowable_values=(), allowable_combinations=()):
         self.name = name
-        # check that the allowable value parts actually match the string?
-        if allowable_values is not None:
-            for group, names in allowable_values.items():
-                for name in names:
-                    self.allowable_values.append(AllowableValue.query.filter_by(group=group, name=name).first() or AllowableValue(group, name))
-        self.set_pattern(pattern, is_regex)
+        self.user = user
+        self.set_pattern(pattern, is_regex, allowable_values, allowable_combinations)
+
+    def _add_allowable_values(self, group_number, group_name, *values, combination_ID=None):
+        for value in values:
+            association = Convention_AllowableValue(group_number=group_number, group_name=group_name, combination_ID=combination_ID)
+            association.allowable_value = db.session.query(AllowableValue).filter_by(name=value).first() or AllowableValue(value)
+            db.session.add(association.allowable_value)
+            self.allowable_values.append(association)
 
     @flask_sqlalchemy.orm.reconstructor
     def _init_on_load(self):
@@ -66,30 +82,78 @@ class Convention(db.Model):
         raise AttributeError("pattern is not directly writeable. Use set_pattern instead.")
 
     def get_data(self):
-        allowable_values = collections.defaultdict(list)
-        for allowable_value in self.allowable_values:
-            allowable_values[allowable_value.group].append(allowable_value.name)
+        if self.combinations_restricted:
+            allowable_values = collections.defaultdict(dict)
+            for allowable_value in self.allowable_values:
+                allowable_values[allowable_value.combination_ID][allowable_value.group_name or
+                                                                 str(allowable_value.group_number)] = allowable_value.allowable_value.name
+            allowable_values = list(allowable_values.values())
+            label = "Allowable Combinations"
+        else:
+            allowable_values = collections.defaultdict(list)
+            for allowable_value in self.allowable_values:
+                allowable_values[allowable_value.group_name or str(allowable_value.group_number)].append(allowable_value.allowable_value.name)
+            label = "Allowable Values"
         return {
-            Convention.key.name: self.key,
+            Convention.key.name: str(self.key),
+            User.email.name: self.user.email,
             Convention.name.name: self.name,
             Convention._pattern.name: self._pattern,
-            "Allowable Values": allowable_values
+            Convention.combinations_restricted.name: self.combinations_restricted,
+            label: allowable_values
         }
 
     def get_url(self):
         return flask.url_for("api.get_convention", convention_key=self.key, _external=True)
 
-    def set_pattern(self, pattern, is_regex=False):
+    def set_pattern(self, pattern, is_regex=False, allowable_values=(), allowable_combinations=()):
         self._pattern = pattern if is_regex else fnmatch.translate(pattern)
+        self.combinations_restricted = bool(allowable_combinations)
         self._init_on_load()
+        if is_regex and (allowable_values and allowable_combinations):
+            raise ConventionException("Only one of allowable_values and allowable_combinations can be provided.")
+        if self.allowable_values.first() is not None:
+            if not is_regex or (allowable_values or allowable_combinations):
+                self.allowable_values = []
+            else:
+                if self.allowable_values.with_entities(db.func.max(Convention_AllowableValue.group_number)).scalar() > self._compiled_regex.groups:
+                    raise ConventionException("After updating the pattern, there are more groups of allowable values than capturing groups defined " +
+                                              "in the pattern. Please pass allowable_values or allowable_combinations when updating the pattern")
+                return
+        if is_regex:
+            group_names = {v: k for k, v in self._compiled_regex.groupindex.items()}
+            if allowable_values:
+                if len(allowable_values) > self._compiled_regex.groups:
+                    raise ConventionException("There are more groups of allowable values than capturing groups defined in the pattern.")
+                for index, values in enumerate(allowable_values):
+                    group_number = index + 1
+                    self._add_allowable_values(group_number, group_names.get(group_number), *values)
+            elif allowable_combinations:
+                if len(allowable_combinations[0]) != self._compiled_regex.groups:
+                    raise ConventionException("The number of groups in the allowable combinations is different to the number of capturing groups " +
+                                              "defined in the pattern.")
+                for combination_ID, allowable_combination in enumerate(allowable_combinations):
+                    for index, value in enumerate(allowable_combination):
+                        group_number = index + 1
+                        self._add_allowable_values(group_number, group_names.get(group_number), value, combination_ID=combination_ID)
 
     def validate(self, s):
         match = self._compiled_regex.match(s)
         if match is None:
             return False
-        for group, name in match.groupdict().items():
-            if (name is not None and self.allowable_values.filter_by(group=group).first() is not None and
-                    self.allowable_values.filter_by(group=group, name=name).first() is None):
+        groups = match.groups()
+        if self.combinations_restricted:
+            combination_IDs = collections.Counter()
+            for index, value in enumerate(groups):
+                combination_IDs.update(self.allowable_values.join(Convention_AllowableValue.allowable_value).filter(
+                    Convention_AllowableValue.group_number == index + 1,
+                    AllowableValue.name == value).with_entities(Convention_AllowableValue.combination_ID).all())
+            return (0 if not combination_IDs else combination_IDs.most_common(1)[0][1]) == len(groups)
+        for index, value in enumerate(groups):
+            group_number = index + 1
+            if (self.allowable_values.filter_by(group_number=group_number).first() is not None and
+                    self.allowable_values.join(Convention_AllowableValue.allowable_value).filter(
+                    Convention_AllowableValue.group_number == group_number, AllowableValue.name == value).first() is None):
                 return False
         return True
 

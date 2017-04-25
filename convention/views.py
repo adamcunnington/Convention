@@ -131,4 +131,9 @@ def edit_profile():
     return flask.render_template("form.html", title="Edit Profile", form=edit_profile_form)
 
 
+@auth.blueprint.route("/request-token")
+def request_token():
+    return flask.jsonify({"token": flask_login.current_user.generate_auth_token() + ":"})
+
+
 convention.app.register_blueprint(auth.blueprint, url_prefix="/users")
