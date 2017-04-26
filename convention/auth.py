@@ -8,14 +8,11 @@ from convention import models, utilities
 
 blueprint = flask.Blueprint("auth", __name__)
 login_manager = flask_login.LoginManager(convention.app)
-login_manager.login_view = "users"
 oauth = client.OAuth(convention.app)
-convention.app.config["google"] = {
-    "consumer_key": "776473556737-7eifgi9gjm63pmmcgn6qkpnce4kp36mp.apps.googleusercontent.com",
-    "consumer_secret": "cZvTjiK3efZvvv-CB2mCSPe1"
-}
+
+_GOOGLE = "google"
 oauth_providers = {
-    "google": utilities.GoogleOAuth("google", oauth)
+    _GOOGLE: utilities.GoogleOAuth(_GOOGLE, oauth, convention.app.config["OAUTH_CREDENTIALS"][_GOOGLE])
 }
 
 

@@ -136,4 +136,5 @@ def request_token():
     return flask.jsonify({"token": flask_login.current_user.generate_auth_token() + ":"})
 
 
+flask_login.login_manager.login_view = "users"
 convention.app.register_blueprint(auth.blueprint, url_prefix="/users")

@@ -12,7 +12,6 @@ import itsdangerous
 import convention
 
 
-convention.app.config["SQLALCHEMY_DATABASE_URI"] = r"sqlite:///C:\Python Projects\Convention\convention.db"
 db = flask_sqlalchemy.SQLAlchemy(convention.app)
 
 

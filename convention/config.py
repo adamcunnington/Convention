@@ -5,6 +5,16 @@ class Config(object):
     DEBUG = False
     SECRET_KEY = os.urandom(24)
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    OAUTH_CREDENTIALS = {
+        "facebook": {
+            "consumer_key": os.environ.get("CONVENTION_FACEBOOK_CONSUMER_KEY"),
+            "consumer_secret": os.environ.get("CONVENTION_FACEBOOK_CONSUMER_SECRET")
+        },
+        "google": {
+            "consumer_key": os.environ.get("CONVENTION_GOOGLE_CONSUMER_KEY"),
+            "consumer_secret": os.environ.get("CONVENTION_GOOGLE_CONSUMER_SECRET")
+        }
+    }
 
 
 class DevelopmentConfig(Config):
