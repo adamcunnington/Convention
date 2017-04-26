@@ -135,7 +135,7 @@ class Convention(db.Model):
                 for combination_ID, allowable_combination in enumerate(allowable_combinations):
                     for index, value in enumerate(allowable_combination):
                         group_number = index + 1
-                        self._add_allowable_values(group_number, group_names.get(group_number), value, combination_ID=combination_ID)
+                        self._add_allowable_values(group_number, group_names.get(group_number), value, combination_ID=combination_ID + 1)
 
     def validate(self, s):
         match = self._compiled_regex.match(s)
