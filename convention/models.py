@@ -4,7 +4,6 @@ import fnmatch
 import re
 
 from werkzeug import security
-import flask
 import flask_login
 import flask_sqlalchemy
 import itsdangerous
