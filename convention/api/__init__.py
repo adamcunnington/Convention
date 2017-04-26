@@ -16,4 +16,5 @@ def _before_request():
 
 @token_auth.verify_password
 def _verify_token(token, password):
-    return models.User.verify_auth_token(token) is not None
+    flask.g.current_user = models.User.verify_auth_token(token)
+    return flask.g.current_user is not None

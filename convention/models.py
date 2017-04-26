@@ -57,7 +57,7 @@ class Convention(db.Model):
 
     __tableargs__ = (db.UniqueConstraint("UserKey", "ConventionName"), )
 
-    def __init__(self, name, user, pattern, is_regex=False, allowable_values=(), allowable_combinations=()):
+    def __init__(self, name, user, pattern, is_regex=False, allowable_values=None, allowable_combinations=None):
         self.name = name
         self.user = user
         self.set_pattern(pattern, is_regex, allowable_values, allowable_combinations)
@@ -84,14 +84,14 @@ class Convention(db.Model):
     def get_data(self):
         if self.combinations_restricted:
             allowable_values = collections.defaultdict(dict)
-            for allowable_value in self.allowable_values:
+            for allowable_value in self.allowable_values.filter(Convention_AllowableValue.combination_ID.isnot(None)):
                 allowable_values[allowable_value.combination_ID][allowable_value.group_name or
                                                                  str(allowable_value.group_number)] = allowable_value.allowable_value.name
             allowable_values = list(allowable_values.values())
             label = "Allowable Combinations"
         else:
             allowable_values = collections.defaultdict(list)
-            for allowable_value in self.allowable_values:
+            for allowable_value in self.allowable_values.filter(Convention_AllowableValue.combination_ID.is_(None)):
                 allowable_values[allowable_value.group_name or str(allowable_value.group_number)].append(allowable_value.allowable_value.name)
             label = "Allowable Values"
         return {
@@ -106,9 +106,9 @@ class Convention(db.Model):
     def get_url(self):
         return flask.url_for("api.get_convention", convention_key=self.key, _external=True)
 
-    def set_pattern(self, pattern, is_regex=False, allowable_values=(), allowable_combinations=()):
+    def set_pattern(self, pattern, is_regex=False, allowable_values=None, allowable_combinations=None):
         self._pattern = pattern if is_regex else fnmatch.translate(pattern)
-        self.combinations_restricted = bool(allowable_combinations)
+        self.combinations_restricted = is_regex and bool(allowable_combinations is not None or self.combinations_restricted)
         self._init_on_load()
         if is_regex and (allowable_values and allowable_combinations):
             raise ConventionException("Only one of allowable_values and allowable_combinations can be provided.")
@@ -122,13 +122,13 @@ class Convention(db.Model):
                 return
         if is_regex:
             group_names = {v: k for k, v in self._compiled_regex.groupindex.items()}
-            if allowable_values:
+            if allowable_values is not None:
                 if len(allowable_values) > self._compiled_regex.groups:
                     raise ConventionException("There are more groups of allowable values than capturing groups defined in the pattern.")
                 for index, values in enumerate(allowable_values):
                     group_number = index + 1
                     self._add_allowable_values(group_number, group_names.get(group_number), *values)
-            elif allowable_combinations:
+            elif allowable_combinations is not None:
                 if len(allowable_combinations[0]) != self._compiled_regex.groups:
                     raise ConventionException("The number of groups in the allowable combinations is different to the number of capturing groups " +
                                               "defined in the pattern.")
@@ -149,12 +149,13 @@ class Convention(db.Model):
                     Convention_AllowableValue.group_number == index + 1,
                     AllowableValue.name == value).with_entities(Convention_AllowableValue.combination_ID).all())
             return (0 if not combination_IDs else combination_IDs.most_common(1)[0][1]) == len(groups)
-        for index, value in enumerate(groups):
-            group_number = index + 1
-            if (self.allowable_values.filter_by(group_number=group_number).first() is not None and
-                    self.allowable_values.join(Convention_AllowableValue.allowable_value).filter(
-                    Convention_AllowableValue.group_number == group_number, AllowableValue.name == value).first() is None):
-                return False
+        if self.allowable_values is not None:
+            for index, value in enumerate(groups):
+                group_number = index + 1
+                if (self.allowable_values.filter_by(group_number=group_number).first() is not None and
+                        self.allowable_values.join(Convention_AllowableValue.allowable_value).filter(
+                        Convention_AllowableValue.group_number == group_number, AllowableValue.name == value).first() is None):
+                    return False
         return True
 
 

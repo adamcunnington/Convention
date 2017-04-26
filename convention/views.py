@@ -42,7 +42,7 @@ def login():
     login_form = forms.LoginForm()
     if login_form.validate_on_submit():
         user = models.User.query.filter_by(email=login_form.email.data).first()
-        if user is None:
+        if user is None or not user.registered:
             flask.flash("That email is not registered.")
         else:
             if user.verify_password(login_form.password.data):
