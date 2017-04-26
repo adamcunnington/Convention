@@ -5,7 +5,7 @@
     <body>
         <h1>{{ title }}</h1>
         {% for message in get_flashed_messages() %}
-            <p><b>Error</b>: {{ message }}</p>
+            <p>Error: {{ message }}</p>
         {% endfor %}
         <form method="POST">
             <dl>
