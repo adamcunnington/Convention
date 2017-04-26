@@ -62,7 +62,6 @@ coverage.xml
 local_settings.py
 
 # Flask stuff:
-instance/
 .webassets-cache
 
 # Scrapy stuff:
@@ -159,3 +158,4 @@ $RECYCLE.BIN/
 # Convention Specifics
 convention.db
 convention.sublime-project
+*/instance/*.py

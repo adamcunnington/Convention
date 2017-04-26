@@ -10,9 +10,11 @@ blueprint = flask.Blueprint("auth", __name__)
 login_manager = flask_login.LoginManager(convention.app)
 oauth = client.OAuth(convention.app)
 
+_CREDENTIALS = convention.app.config["OAUTH_CREDENTIALS"]
 _GOOGLE = "google"
+_GOOGLE_CREDENTIALS = _CREDENTIALS[_GOOGLE]
 oauth_providers = {
-    _GOOGLE: utilities.GoogleOAuth(_GOOGLE, oauth, convention.app.config["OAUTH_CREDENTIALS"][_GOOGLE])
+    _GOOGLE: utilities.GoogleOAuth(_GOOGLE, oauth, _GOOGLE_CREDENTIALS["key"], _GOOGLE_CREDENTIALS["secret"])
 }
 
 

@@ -11,6 +11,10 @@ def _get_convention(convention_key):
     return c
 
 
+def _get_convention_url(convention_key):
+    return flask.url_for("api.get_convention", convention_key=convention_key, _external=True)
+
+
 @api.blueprint.route("/conventions/", methods=["POST"])
 def add_convention():
     data = flask.request.get_json(force=True)
@@ -18,7 +22,7 @@ def add_convention():
                           data.get("allowable_combinations"))
     models.db.session.add(c)
     models.db.session.commit()
-    return flask.jsonify({}, 201, {"Location": c.get_url()})
+    return flask.jsonify({}, 201, {"Location": _get_convention_url(c.key)})
 
 
 @api.blueprint.route("/conventions/<int:convention_key>", methods=["DELETE"])
