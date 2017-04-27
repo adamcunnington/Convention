@@ -2,7 +2,7 @@ import flask
 import flask_login
 
 import convention
-from convention import auth, forms, models
+from convention import auth, decorators, forms, models
 
 
 @convention.app.route("/")
@@ -132,8 +132,10 @@ def edit_profile():
 
 
 @auth.blueprint.route("/request-token")
+@decorators.add_cache_control()
+@decorators.to_json
 def request_token():
-    return flask.jsonify({"token": flask_login.current_user.generate_auth_token() + ":"})
+    return {"token": flask_login.current_user.generate_auth_token() + ":"}
 
 
 flask_login.login_manager.login_view = "users"
