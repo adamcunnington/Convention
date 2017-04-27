@@ -98,7 +98,7 @@ class Convention(db.Model):
     def __init__(self, name, user, pattern, is_regex=False, values=None, combinations=None, combinations_restricted=False):
         self.name = name
         self.user = user
-        self.set_pattern(pattern, is_regex, values, combinations, combinations_restricted)
+        self.set_pattern(pattern, is_regex, values, combinations)
         self.combinations_restricted = combinations_restricted
 
     @flask_sqlalchemy.orm.reconstructor
