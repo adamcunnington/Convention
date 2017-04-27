@@ -24,14 +24,14 @@ class User(db.Model, flask_login.UserMixin):
     __tablename__ = "User"
 
     key = db.Column("UserKey", db.Integer, primary_key=True)
-    email = db.Column("UserEmail", db.String(320), index=True, unique=True, nullable=False)
+    email = db.Column("UserEmail", db.Unicode(320), index=True, unique=True, nullable=False)
     created_on_utc = db.Column("UserCreatedOnUTC", db.DateTime, default=datetime.datetime.utcnow, nullable=False)
     last_updated_utc = db.Column("UserLastUpdatedUTC", db.DateTime, default=datetime.datetime.utcnow,
                                  onupdate=datetime.datetime.utcnow, nullable=False)
-    password_hash = db.Column("UserPasswordHash", db.String(128))
-    first_name = db.Column("UserFirstName", db.String(35))
-    last_name = db.Column("UserLastName", db.String(35))
-    avatar_url = db.Column("UserAvatarURL", db.String(500))
+    password_hash = db.Column("UserPasswordHash", db.Unicode(128))
+    first_name = db.Column("UserFirstName", db.Unicode(35))
+    last_name = db.Column("UserLastName", db.Unicode(35))
+    avatar_url = db.Column("UserAvatarURL", db.Unicode(500))
     is_active = db.Column("UserIsActive", db.Boolean, default=True)
 
     @property
@@ -71,7 +71,7 @@ class AllowableGroup(db.Model):
 
     key = db.Column("AllowableGroupKey", db.Integer, primary_key=True)
     number = db.Column("AllowableGroupNumber", db.Integer, nullable=False)
-    name = db.Column("AllowableGroupName", db.String(50))
+    name = db.Column("AllowableGroupName", db.Unicode(50))
 
     __tableargs__ = (db.UniqueConstraint("AllowableGroupNumber", "AllowableGroupName"), )
 
@@ -80,7 +80,7 @@ class AllowableValue(db.Model):
     __tablename__ = "AllowableValue"
 
     key = db.Column("AllowableValueKey", db.Integer, primary_key=True)
-    name = db.Column("AllowableValueName", db.String(100), unique=True, nullable=False)
+    name = db.Column("AllowableValueName", db.Unicode(100), unique=True, nullable=False)
 
 
 class Convention(db.Model):
@@ -88,12 +88,12 @@ class Convention(db.Model):
 
     key = db.Column("ConventionKey", db.Integer, primary_key=True)
     user_key = db.Column("UserKey", db.Integer, db.ForeignKey(User.key), nullable=False)
-    name = db.Column("ConventionName", db.String(50), nullable=False)
+    name = db.Column("ConventionName", db.Unicode(50), nullable=False)
     combinations_restricted = db.Column("ConventionCombinationsRestricted", db.Boolean, nullable=False)
-    _pattern = db.Column("ConventionPattern", db.String(1000), nullable=False)
+    _pattern = db.Column("ConventionPattern", db.Unicode(1000), nullable=False)
 
     user = db.relationship(User)
-    associations = db.relationship(lambda: Association, lazy="dynamic", cascade="all, delete, delete-orphan")
+    restrictions = db.relationship(lambda: Restriction, lazy="dynamic", cascade="all, delete, delete-orphan")
 
     __tableargs__ = (db.UniqueConstraint(user_key, name), )
 
@@ -104,10 +104,10 @@ class Convention(db.Model):
 
     def _add_allowable_values(self, group_number, group_name, *values, combination_ID=None):
         for value in values:
-            association = Association(group_number=group_number, group_name=group_name, combination_ID=combination_ID)
-            association.allowable_value = db.session.query(AllowableValue).filter_by(name=value).first() or AllowableValue(value)
-            db.session.add(association.allowable_value)
-            self.associations.append(association)
+            restriction = Restriction(group_number=group_number, group_name=group_name, combination_ID=combination_ID)
+            restriction.allowable_value = db.session.query(AllowableValue).filter_by(name=value).first() or AllowableValue(value)
+            db.session.add(restriction.allowable_value)
+            self.restrictions.append(restriction)
 
     @flask_sqlalchemy.orm.reconstructor
     def _init_on_load(self):
@@ -124,14 +124,14 @@ class Convention(db.Model):
     def get_data(self):
         if self.combinations_restricted:
             allowables = collections.defaultdict(dict)
-            for association in self.associations.filter(Association.combination_ID.isnot(None)):
-                allowables[association.combination_ID][association.allowable_group.name or
-                                                       str(association.allowable_group.number)] = association.allowable_value.name
+            for restriction in self.restrictions.filter(Restriction.combination_ID.isnot(None)):
+                allowables[restriction.combination_ID][restriction.allowable_group.name or
+                                                       str(restriction.allowable_group.number)] = restriction.allowable_value.name
             label = "Allowable Combinations"
         else:
             allowables = collections.defaultdict(list)
-            for association in self.association.filter(Association.combination_ID.is_(None)):
-                allowables[association.allowable_group.name or str(association.allowable_group.number)].append(association.allowable_value.name)
+            for restriction in self.restriction.filter(Restriction.combination_ID.is_(None)):
+                allowables[restriction.allowable_group.name or str(restriction.allowable_group.number)].append(restriction.allowable_value.name)
             label = "Allowable Values"
         return {
             Convention.key.name: str(self.key),
@@ -148,11 +148,11 @@ class Convention(db.Model):
         self._init_on_load()
         if is_regex and (allowable_values and allowable_combinations):
             raise ConventionException("Only one of allowable_values and allowable_combinations can be provided.")
-        if self.associations.first() is not None:
+        if self.restrictions.first() is not None:
             if not is_regex or (allowable_values or allowable_combinations):
-                self.associations = []
+                self.restrictions = []
             else:
-                if self.associations.join(Association.allowable_group).with_entities(
+                if self.restrictions.join(Restriction.allowable_group).with_entities(
                         db.func.max(AllowableGroup.number)).scalar() > self._compiled_regex.groups:
                     raise ConventionException("After updating the pattern, there are more groups of allowable values than capturing groups defined " +
                                               "in the pattern. Please pass allowable_values or allowable_combinations when updating the pattern")
@@ -182,24 +182,24 @@ class Convention(db.Model):
         if self.combinations_restricted:
             combination_IDs = collections.Counter()
             for index, value in enumerate(groups):
-                combination_IDs.update(self.associations.join(Association.allowable_value, Association.allowable_group)
+                combination_IDs.update(self.restrictions.join(Restriction.allowable_value, Restriction.allowable_group)
                                        .filter(AllowableGroup.number == index + 1, AllowableValue.name == value)
-                                       .with_entities(Association.combination_ID).all())
+                                       .with_entities(Restriction.combination_ID).all())
             return (0 if not combination_IDs else combination_IDs.most_common(1)[0][1]) == len(groups)
-        if self.associations is not None:
+        if self.restrictions is not None:
             for index, value in enumerate(groups):
                 group_number = index + 1
-                if (self.associations.join(Association.allowable_group).filter(AllowableGroup.number == group_number).first()
-                        is not None and self.associations.join(Association.allowable_group, Association.allowable_value)
+                if (self.restrictions.join(Restriction.allowable_group).filter(AllowableGroup.number == group_number).first()
+                        is not None and self.restrictions.join(Restriction.allowable_group, Restriction.allowable_value)
                         .filter(AllowableGroup.number == group_number, AllowableValue.name == value).first() is None):
                     return False
         return True
 
 
-class Association(db.Model):
-    __tablename__ = "Convention_AllowableValue"
+class Restriction(db.Model):
+    __tablename__ = "Restriction"
 
-    key = db.Column("Convention_AllowableValueKey", db.Integer, primary_key=True)
+    key = db.Column("RestrictionKey", db.Integer, primary_key=True)
     convention_key = db.Column("ConventionKey", db.Integer, db.ForeignKey(Convention.key), nullable=False)
     allowable_value_key = db.Column("AllowableValueKey", db.Integer, db.ForeignKey(AllowableValue.key), nullable=False)
     allowable_group_key = db.Column("AllowableGroupKey", db.Integer, db.ForeignKey(AllowableGroup.key), nullable=False)
