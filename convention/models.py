@@ -90,6 +90,7 @@ class Convention(db.Model):
     user_key = db.Column("UserKey", db.Integer, db.ForeignKey(User.key), nullable=False)
     name = db.Column("ConventionName", db.String(50), nullable=False)
     combinations_restricted = db.Column("ConventionCombinationsRestricted", db.Boolean, nullable=False)
+    _is_regex = db.Column("ConventionIsRegex", db.Boolean)
     _pattern = db.Column("ConventionPattern", db.String(1000), nullable=False)
 
     user = db.relationship(User)
@@ -102,7 +103,7 @@ class Convention(db.Model):
 
     @flask_sqlalchemy.orm.reconstructor
     def _init_on_load(self):
-        self._regex = re.compile(self._pattern)
+        self._regex = re.compile(fnmatch.translate(self._pattern) if not self._is_regex else self._pattern)
 
     def _add_restrictions(self, group_number, group_name, *values, combination_ID=None):
         for value in values:
@@ -113,6 +114,10 @@ class Convention(db.Model):
             db.session.add(restriction.allowable_value)
             db.session.add(restriction.allowable_group)
             self.restrictions.append(restriction)
+
+    @property
+    def is_regex(self):
+        return self._is_regex
 
     @property
     def pattern(self):
@@ -132,7 +137,7 @@ class Convention(db.Model):
             label = "Allowable Combinations"
         else:
             allowables = collections.defaultdict(list)
-            for restriction in self.restriction.filter(Restriction.combination_ID.is_(None)):
+            for restriction in self.restrictions.filter(Restriction.combination_ID.is_(None)):
                 key = "%s%s" % (restriction.allowable_group.number,
                                 " - %s" % restriction.allowable_group.name if restriction.allowable_group.name else "")
                 allowables[key].append(restriction.allowable_value.name)
@@ -184,7 +189,8 @@ class Convention(db.Model):
         self.combinations_restricted = True if combinations_restricted is None else combinations_restricted
 
     def set_pattern(self, pattern, is_regex=False, values=None, combinations=None, combinations_restricted=None):
-        self._pattern = pattern if is_regex else fnmatch.translate(pattern)
+        self._pattern = pattern
+        self._is_regex = is_regex
         self._init_on_load()
         if is_regex:
             self.set_restrictions(values, combinations, combinations_restricted)
