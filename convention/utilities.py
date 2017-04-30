@@ -22,10 +22,10 @@ class OAuthProvider(object):
         response = self.service.authorized_response()
         if response is None:
             return None
-        response = requests.get(self._USER_INFO_URL, headers={"Authorization": "Bearer %s" % response["access_token"]})
-        if response.status_code != requests.codes.ok:
+        user_info_response = requests.get(self._USER_INFO_URL, headers={"Authorization": "Bearer %s" % response["access_token"]})
+        if user_info_response.status_code != requests.codes.ok:
             return None
-        response_json = response.json()
+        response_json = user_info_response.json()
         user_info = self._RESPONSE_MAPPING.copy()
         for key, value in self._RESPONSE_MAPPING.items():
             user_info[key] = response_json[value]

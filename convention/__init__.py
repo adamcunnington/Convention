@@ -13,5 +13,3 @@ app = flask.Flask(__name__, instance_path=os.path.join(_THIS_DIRECTORY, "instanc
 dotenv.load_dotenv(os.path.join(_THIS_DIRECTORY, "config.env"))
 app.config.from_object(config.CONFIGURATIONS[os.environ.get("CONVENTION_CONFIG")])
 app.config.from_pyfile(os.environ.get("CONVENTION_CONFIG_OVERRIDE_PATH"), silent=True)
-
-# add comments to code

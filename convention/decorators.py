@@ -13,7 +13,7 @@ def add_cache_control(*directives):
     return wrapper
 
 
-def add_collection_controls(expand_endpoint, expand_kwarg, max_per_page=10):
+def add_collection_controls(expand_endpoint, endpoint_ident_name, max_per_page=10):
     @wrapt.decorator
     def wrapper(wrapped, instance, args, kwargs):
         page = flask.request.args.get("page", 1, type=int)
@@ -21,7 +21,7 @@ def add_collection_controls(expand_endpoint, expand_kwarg, max_per_page=10):
         paginator = wrapped(*args, **kwargs).paginate(page, per_page)
         expand = flask.request.args.get("expand")
         return {
-            "items": [item.get_data() for item in paginator.items] if expand else [flask.url_for(expand_endpoint, **{expand_kwarg: item.key},
+            "items": [item.get_data() for item in paginator.items] if expand else [flask.url_for(expand_endpoint, endpoint_ident_name=item.key,
                                                                                                  _external=True) for item in paginator.items],
             "metadata": {
                 "page": page,
@@ -48,9 +48,9 @@ def add_etag(wrapped, instance, args, kwargs):
     response.headers["Cache-Control"] = "max-age=86400"
     if_match = flask.request.headers.get("If-Match")
     if_none_match = flask.request.headers.get("If-None-Match")
-    if if_match and if_match != "*" and etag not in (tag.strip() for tag in if_match.split(",")):
+    if if_match is not None and if_match != "*" and etag not in (tag.strip() for tag in if_match.split(",")):
         flask.abort(412)
-    elif if_none_match and (if_none_match == "*" or etag in (tag.strip() for tag in if_none_match.split(", "))):
+    elif if_none_match is not None and (if_none_match == "*" or etag in (tag.strip() for tag in if_none_match.split(", "))):
         flask.abort(304)
     return response
 
@@ -65,6 +65,8 @@ def to_json(wrapped, instance, args, kwargs):
             return_value, status, headers = return_value
         elif len(return_value) == 2:
             return_value, headers = return_value
+    elif return_value is None:
+        return_value = {}
     response = flask.jsonify(return_value)
     if status is not None:
         response.status_code = int(status)

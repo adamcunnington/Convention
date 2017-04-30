@@ -80,7 +80,7 @@ class AllowableValue(db.Model):
     __tablename__ = "AllowableValue"
 
     key = db.Column("AllowableValueKey", db.Integer, primary_key=True)
-    name = db.Column("AllowableValueName", db.Unicode(100), unique=True, nullable=False)
+    name = db.Column("AllowableValueName", db.Unicode(100), unique=True)
 
 
 class Convention(db.Model):
@@ -96,7 +96,7 @@ class Convention(db.Model):
     user = db.relationship(User)
     restrictions = db.relationship(lambda: Restriction, lazy="dynamic", cascade="all, delete, delete-orphan")
 
-    def __init__(self, name, user, pattern, is_regex=False, values=None, combinations=None, combinations_restricted=None):
+    def __init__(self, name, user, pattern, is_regex, values=None, combinations=None, combinations_restricted=None):
         self.name = name
         self.user = user
         self.set_pattern(pattern, is_regex, values, combinations, combinations_restricted)
@@ -130,16 +130,17 @@ class Convention(db.Model):
     def get_data(self):
         if self.combinations_restricted:
             allowables = collections.defaultdict(dict)
+            # Despite combinations_restricted being True, we cannot assume that the restrictions will have a combination ID as the user could have
+            # explicitly set combinations_restricted to True whilst restricting values only.
             for restriction in self.restrictions.filter(Restriction.combination_ID.isnot(None)):
-                key = "%s%s" % (restriction.allowable_group.number,
-                                " - %s" % restriction.allowable_group.name if restriction.allowable_group.name else "")
+                key = restriction.allowable_group.number + (" - " + restriction.allowable_group.name if restriction.allowable_group.name else "")
                 allowables[restriction.combination_ID][key] = restriction.allowable_value.name
             label = "Allowable Combinations"
         else:
             allowables = collections.defaultdict(list)
+            # Similar to the above scenario, we cannot assume that the combinations aren't restricted.
             for restriction in self.restrictions.filter(Restriction.combination_ID.is_(None)):
-                key = "%s%s" % (restriction.allowable_group.number,
-                                " - %s" % restriction.allowable_group.name if restriction.allowable_group.name else "")
+                key = restriction.allowable_group.number + (" - " + restriction.allowable_group.name if restriction.allowable_group.name else "")
                 allowables[key].append(restriction.allowable_value.name)
             label = "Allowable Values"
         return {
@@ -153,13 +154,14 @@ class Convention(db.Model):
 
     def set_restrictions(self, values=None, combinations=None, combinations_restricted=None):
         pattern_named_groups = self._regex.groupindex.items()
-        group_names = {v: k for k, v in pattern_named_groups}
+        group_names = {v: k for k, v in pattern_named_groups}  # Reverse the groupindex mapping
         if values is not None:
             if combinations is not None:
                 raise ConventionException("The 'values' and 'combinations' parameters cannot both be provided")
+            # The user has provided new values so we need to check that they fit the pattern structure.
             if len(values) > self._regex.groups:
                 raise ConventionException("More groups of allowable values were provided than capturing groups in the pattern.")
-            self.restrictions = []
+            self.restrictions = []  # New values overwrite existing restrictions
             for index, values in enumerate(values):
                 group_number = index + 1
                 self._add_restrictions(group_number, group_names.get(group_number), *values)
@@ -167,10 +169,18 @@ class Convention(db.Model):
             return
         elif combinations is None:
             if self.restrictions is not None:
+                # The user has not provided any new values or combinations but we need to ensure that any existing restrictions fit the new pattern.
+                # Specifically, we check that the existing named groups still feature in the new pattern, and with the same group index.
                 if all(row in pattern_named_groups for row in self.restrictions.join(Restriction.allowable_group).filter(
                         AllowableGroup.name.isnot(None)).distinct(AllowableGroup.name, AllowableGroup.number).with_entities(
                         AllowableGroup.name, AllowableGroup.number)):
+                    # Unnamed groups will not be accounted for in the above so we also need to find out the total number of groups that are currently
+                    # restricted so we can check that the new pattern doesn't contain fewer groups. The max is sufficient for value-only restrictions
+                    # and for combinations, this is sufficient also as combinations entail restrictions for every group in the pattern.
                     group_count = self.restrictions.join(Restriction.allowable_group).with_entities(db.func.max(AllowableGroup.number)).scalar()
+                    # The combinations_restricted flag is not necessarily indicative of whether combinations are restricted as the user could have
+                    # explicitly toggled this value. We can just check whether the combination_ID is nullable from the first arbitrary row as it is
+                    # not possible to mix value-only and combination restrictions.
                     combinations_exist = self.restrictions.first().combination_ID is not None
                     if ((combinations_exist and group_count == self._regex.groups) or (not combinations_exist and group_count <= self._regex.groups)):
                         return
@@ -181,20 +191,22 @@ class Convention(db.Model):
             raise ConventionException("The number of groups were inconsistent amongst the combinations.")
         if group_count != self._regex.groups:
             raise ConventionException("The number of groups in the combinations was different to the number of capturing groups in the pattern.")
-        self.restrictions = []
+        self.restrictions = []  # New combinations overwrite existing restrictions
         for combination_index, combination in enumerate(combinations):
             for index, value in enumerate(combination):
                 group_number = index + 1
                 self._add_restrictions(group_number, group_names.get(group_number), value, combination_ID=combination_index + 1)
         self.combinations_restricted = True if combinations_restricted is None else combinations_restricted
 
-    def set_pattern(self, pattern, is_regex=False, values=None, combinations=None, combinations_restricted=None):
+    def set_pattern(self, pattern, is_regex, values=None, combinations=None, combinations_restricted=None):
         self._pattern = pattern
         self._is_regex = is_regex
         self._init_on_load()
         if is_regex:
             self.set_restrictions(values, combinations, combinations_restricted)
         else:
+            # The user has explicitly opted for the basic wildcard pattern which does not support capturing groups so any existing restrictions can
+            # be forgotten.
             self.restrictions = []
             self.combinations_restricted = False
 
@@ -202,17 +214,27 @@ class Convention(db.Model):
         match = self._regex.match(s)
         if match is None:
             return False
+        # We know that the input matches the pattern but we now need to test that any values passed to capturing groups are allowable.
         groups = match.groups()
         if self.combinations_restricted:
             combination_IDs = collections.Counter()
-            for index, value in enumerate(groups):
+            for index in range(self._regex.groups):
+                group_number = index + 1
+                value = groups[group_number] or None
+                # For each value captured by a group, we look for combination IDs that allow that value and add them to a counter object which will
+                # keep track of the amount of times that combination ID has occured.
                 combination_IDs.update(self.restrictions.join(Restriction.allowable_value, Restriction.allowable_group)
-                                       .filter(AllowableGroup.number == index + 1, AllowableValue.name == value)
+                                       .filter(AllowableGroup.number == group_number, AllowableValue.name == value)
                                        .with_entities(Restriction.combination_ID).all())
+            # We then take the combination_ID that occured most and see if the number of occurences matches the number of capturing groups in the
+            # pattern. If so, we know that all the captured values were a valid combination.
             return (0 if not combination_IDs else combination_IDs.most_common(1)[0][1]) == len(groups)
         if self.restrictions is not None:
-            for index, value in enumerate(groups):
+            for index in range(self._regex.groups):
                 group_number = index + 1
+                value = groups[group_number] or None
+                # In the case of value-only restrictions, we need to check that the captured value is valid, but only if the group itself is
+                # restricted. We determine this by looking to see if there is at least one restriction for the group.
                 if (self.restrictions.join(Restriction.allowable_group).filter(AllowableGroup.number == group_number).first()
                         is not None and self.restrictions.join(Restriction.allowable_group, Restriction.allowable_value)
                         .filter(AllowableGroup.number == group_number, AllowableValue.name == value).first() is None):

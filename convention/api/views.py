@@ -5,9 +5,9 @@ from convention import api, decorators, models
 
 
 def _get_convention(convention_key):
-    c = models.Convention.query.filter_by(user=flask.g.current_user, key=convention_key).first()
-    if c is None:
-        flask.abort(404)
+    c = models.Convention.query.get_or_404(convention_key).first()
+    if c.user != flask.g.current_user:
+        flask.abort(401)
     return c
 
 
@@ -46,7 +46,7 @@ def get_convention(convention_key):
 def delete_convention(convention_key):
     models.db.session.delete(_get_convention(convention_key))
     models.db.session.commit()
-    return {}
+    return
 
 
 @api.blueprint.route("/conventions/<int:convention_key>/validate/<s>")
