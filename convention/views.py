@@ -7,7 +7,7 @@ from convention import auth, decorators, forms, models
 
 @convention.app.route("/")
 def index():
-    return flask.render_template("index.html")
+    return flask.redirect(flask.url_for("users"))
 
 
 @convention.app.route("/register", methods=("GET", "POST"))
