@@ -12,7 +12,9 @@
 
         <header class="u-full-width u-cf">
 
-            <h1 class="u-pull-left">Convention</h1>
+            <a href="{{ url_for('index') }}">
+                <h1 class="u-pull-left">Convention</h1>
+            </a>
 
             <nav class="u-pull-right">
                 {% if current_user.is_authenticated %}
