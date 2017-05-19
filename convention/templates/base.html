@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/normalize.css') }}" />
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/skeleton.css') }}" />
+
+        <title>Convention</title>
+    </head>
+    <body>
+
+        <header>
+            <h1>Convention</h1>
+        </header>
+
+        <main>
+
+            {% for message in get_flashed_messages() %}
+                <p>Error: {{ message }}</p>
+            {% endfor %}
+
+            {% block content %}{% endblock %}
+
+        </main>
+
+    </body>
+</html>
