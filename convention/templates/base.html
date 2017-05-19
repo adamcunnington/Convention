@@ -10,10 +10,11 @@
     </head>
     <body>
 
-        <header>
-            <h1>Convention</h1>
+        <header class="u-full-width u-cf">
 
-            <nav>
+            <h1 class="u-pull-left">Convention</h1>
+
+            <nav class="u-pull-right">
                 {% if current_user.is_authenticated %}
                     <a href="#">My profile</a> {# TODO complete URL #}
                     <a href="{{ url_for('logout')}}">Log out</a>
