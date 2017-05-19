@@ -9,7 +9,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         "flask",
-        "flask_httpauth",
+        "flask-httpauth",
         "flask-login",
         "flask-sqlalchemy",
         "flask-oauthlib",
