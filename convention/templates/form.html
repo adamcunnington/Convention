@@ -1,11 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
     <form method="POST">
-        <dl>
+
         {{ form.csrf_token }}
         {% for field in form if field.id != "csrf_token" %}
-            <dt>{{ field.label }}</dt>
-            <dd>{{ field}}
+
+            <div class="row">
+            {{ field.label }}
+            {{ field }}
+
             {% if field.errors %}
                 <ul>
                 {% for error in field.errors %}
@@ -13,9 +16,12 @@
                 {% endfor %}
                 </ul>
             {% endif %}
-          </dd>
+            </div>
+
         {% endfor %}
-        </dl>
-        <input type="submit" value="{{ submit_label|default('Submit') }}">
+
+        <div class="row">
+            <input type="submit" value="{{ submit_label|default('Submit') }}">
+        </div>
     </form>
 {% endblock %}
