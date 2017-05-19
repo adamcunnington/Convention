@@ -11,6 +11,7 @@ Convention is a tool that attempts to meet all the objectives described above. I
 
 Please note that this project is currently in development and pre-release. The below installation and configuration notes are subject to change.
 
+
 ***
 
 
@@ -25,6 +26,7 @@ The following installation steps assume that you have cloned the master branch i
 python setup.py install
 '''
 
+
 ***
 
 
@@ -33,6 +35,7 @@ python setup.py install
 Convention's web portal is based on [Flask](http://flask.pocoo.org/, "Flask"). It is configured in the following way:
 1. A standard config is loaded from *config.py* based on the value of the **CONVENTION_CONFIG** environment variable (must be "dev" [default] or "test"). Note that the standard configs read from the environment variables specified in *config.env*.
 2. This is then overriden by the python file specified in the **CONVENTION_CONFIG_OVERRIDE_PATH** environment variable. If provided, the path must be relative to the *instance* folder. If the value is blank or an invalid file path, this step is silently ignored.
+
 
 ***
 
