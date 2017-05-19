@@ -18,11 +18,13 @@
 
             <nav class="u-pull-right">
                 {% if current_user.is_authenticated %}
-                    <a href="#">My profile</a> {# TODO complete URL #}
-                    <a href="{{ url_for('logout')}}">Log out</a>
+                    <a href="{{ url_for('auth.edit_profile') }}">Profile</a> {# TODO complete URL #}
+                    |
+                    <a href="{{ url_for('logout') }}">Logout</a>
                 {% else %}
                     <a href="{{ url_for('register') }}">Register</a>
-                    <a href="{{ url_for('login') }}">Log in</a>
+                    |
+                    <a href="{{ url_for('login') }}">Login</a>
                 {% endif %}
             </nav>
 

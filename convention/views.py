@@ -14,7 +14,7 @@ def index():
 def register():
     if flask_login.current_user.is_authenticated:
         flask.flash("You are already logged in.")
-        return flask.redirect(flask.url_for("auth.users_index"))
+        return flask.redirect(flask.url_for("users"))
     register_form = forms.RegisterForm()
     if register_form.validate_on_submit():
         if models.User.query.filter_by(email=register_form.email.data).first() is not None:
@@ -25,7 +25,7 @@ def register():
         models.db.session.add(user)
         models.db.session.commit()
         flask_login.login_user(user, remember=True)
-        return flask.redirect(flask.url_for("auth.users_index"))
+        return flask.redirect(flask.url_for("users"))
     return flask.render_template("form.html", title="Register", form=register_form, submit_label="Register!")
 
 
@@ -38,7 +38,7 @@ def users():
 def login():
     if flask_login.current_user.is_authenticated:
         flask.flash("You are already logged in.")
-        return flask.redirect(flask.url_for("auth.users_index"))
+        return flask.redirect(flask.url_for("users"))
     login_form = forms.LoginForm()
     if login_form.validate_on_submit():
         user = models.User.query.filter_by(email=login_form.email.data).first()
@@ -47,7 +47,7 @@ def login():
         else:
             if user.verify_password(login_form.password.data):
                 flask_login.login_user(user, remember=True)
-                return flask.redirect(flask.url_for("auth.users_index"))
+                return flask.redirect(flask.url_for("users"))
             flask.flash("Invalid password.")
     return flask.render_template("form.html", title="Login", form=login_form, submit_label="Login!")
 
@@ -56,7 +56,7 @@ def login():
 def authorise(provider):
     if not flask_login.current_user.is_anonymous:
         flask.flash("You are not an anonymous user.")
-        return flask.redirect(flask.url_for("auth.users_index"))
+        return flask.redirect(flask.url_for("users"))
     return auth.oauth_providers[provider].authorise()
 
 
@@ -64,7 +64,7 @@ def authorise(provider):
 def callback(provider):
     if not flask_login.current_user.is_anonymous:
         flask.flash("You are not an anonymous user.")
-        return flask.redirect(flask.url_for("auth.users_index"))
+        return flask.redirect(flask.url_for("users"))
     user_info = auth.oauth_providers[provider].callback()
     if user_info is None:
         flask.flash("Authentication failed.")
@@ -81,7 +81,7 @@ def callback(provider):
     models.db.session.add(user)
     models.db.session.commit()
     flask_login.login_user(user, remember=True)
-    return flask.redirect(flask.url_for("auth.users_index"))
+    return flask.redirect(flask.url_for("users"))
 
 
 @convention.app.route("/logout")
@@ -93,22 +93,17 @@ def logout():
     return flask.redirect(flask.url_for("users"))
 
 
-@auth.blueprint.route("/")
-def users_index():
-    return "Welcome Back!"
-
-
 @auth.blueprint.route("/change-password", methods=("GET", "POST"))
 def change_password():
     if not flask_login.current_user.registered:
         flask.flash("You must be a registered user to edit your profile.")
-        return flask.redirect(flask.url_for("auth.users_index"))
+        return flask.redirect(flask.url_for("users"))
     change_password_form = forms.ChangePasswordForm()
     if change_password_form.validate_on_submit():
         flask_login.current_user.password = change_password_form.password.data
         models.db.session.add(flask_login.current_user)
         models.db.session.commit()
-        return flask.redirect(flask.url_for("auth.users_index"))
+        return flask.redirect(flask.url_for("users"))
     return flask.render_template("form.html", title="Change Password", form=change_password_form)
 
 
@@ -116,7 +111,7 @@ def change_password():
 def edit_profile():
     if not flask_login.current_user.registered:
         flask.flash("You must be a registered user to edit your profile.")
-        return flask.redirect(flask.url_for("auth.users_index"))
+        return flask.redirect(flask.url_for("users"))
     edit_profile_form = forms.EditProfileForm()
     if edit_profile_form.validate_on_submit():
         flask_login.current_user.first_name = edit_profile_form.first_name.data
@@ -124,7 +119,7 @@ def edit_profile():
         flask_login.current_user.avatar_url = edit_profile_form.avatar_url.data
         models.db.session.add(flask_login.current_user)
         models.db.session.commit()
-        return flask.redirect(flask.url_for("auth.users_index"))
+        return flask.redirect(flask.url_for("users"))
     edit_profile_form.first_name.data = flask_login.current_user.first_name
     edit_profile_form.last_name.data = flask_login.current_user.last_name
     edit_profile_form.avatar_url.data = flask_login.current_user.avatar_url
