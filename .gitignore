@@ -112,6 +112,9 @@ ENV/
 # proportion of contributors will probably not be using SublimeText
 # *.sublime-project
 
+### IntelliJ IDEA ###
+.idea/*
+
 # sftp configuration file
 sftp-config.json
 
