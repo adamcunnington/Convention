@@ -1,4 +1,5 @@
 import flask
+import flask_login
 import requests
 
 
@@ -61,3 +62,12 @@ class GoogleOAuth(OAuthProvider):
         "avatar_url": "picture"
     }
     _USER_INFO_URL = "https://www.googleapis.com/userinfo/v2/me"
+
+
+def redirect(endpoint=None, **kwargs):
+    if endpoint is None:
+        url = flask.request.args.get("next", flask.request.referrer) or (flask.url_for("users.index" if flask_login.current_user.is_authenticated
+                                                                                       else "index"))
+    else:
+        url = flask.url_for(endpoint, **kwargs)
+    return flask.redirect(url)
