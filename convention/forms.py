@@ -21,7 +21,7 @@ class RegisterForm(flask_wtf.FlaskForm, _PasswordField, _EmailField, _EditableFi
     pass
 
 
-class LoginForm(flask_wtf.FlaskForm, _PasswordField, _EmailField):
+class LoginForm(flask_wtf.FlaskForm, _EmailField, _PasswordField):
     pass
 
 
