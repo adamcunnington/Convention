@@ -5,6 +5,11 @@ import convention
 from convention import auth, forms, models, utilities
 
 
+@auth.blueprint.route("/")
+def index():
+    return flask.render_template("auth.html")
+
+
 @auth.blueprint.route("/register", methods=("GET", "POST"))
 def register():
     if flask_login.current_user.is_authenticated:
@@ -37,7 +42,7 @@ def login():
         else:
             if user.verify_password(login_form.password.data):
                 flask_login.login_user(user, remember=True)
-                return utilities.redirect()
+                return utilities.redirect("users.index")
             flask.flash("Invalid password.")
     return flask.render_template("form.html", title="Login", form=login_form, submit_label="Login!")
 
@@ -74,7 +79,7 @@ def callback(provider):
     models.db.session.add(user)
     models.db.session.commit()
     flask_login.login_user(user, remember=True)
-    return utilities.redirect()
+    return utilities.redirect("users.index")
 
 
 @auth.blueprint.route("/logout")

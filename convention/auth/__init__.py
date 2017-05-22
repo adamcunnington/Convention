@@ -5,7 +5,7 @@ import convention
 from convention import utilities
 
 
-blueprint = flask.Blueprint("auth", __name__)
+blueprint = flask.Blueprint("auth", __name__, template_folder="../auth/templates")
 oauth = client.OAuth(convention.app)
 
 _CREDENTIALS = convention.app.config["OAUTH_CREDENTIALS"]

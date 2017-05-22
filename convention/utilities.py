@@ -34,7 +34,7 @@ class OAuthProvider(object):
 
     @property
     def callback_url(self):
-        return flask.url_for("callback", provider=self.service.name, _external=True)
+        return flask.url_for("auth.callback", provider=self.service.name, _external=True)
 
 
 class FacebookOAuth(OAuthProvider):
@@ -64,10 +64,10 @@ class GoogleOAuth(OAuthProvider):
     _USER_INFO_URL = "https://www.googleapis.com/userinfo/v2/me"
 
 
-def redirect(endpoint=None, **kwargs):
+def redirect(endpoint=None):
     if endpoint is None:
         url = flask.request.args.get("next", flask.request.referrer) or (flask.url_for("users.index" if flask_login.current_user.is_authenticated
                                                                                        else "index"))
     else:
-        url = flask.url_for(endpoint, **kwargs)
+        url = flask.url_for(endpoint)
     return flask.redirect(url)

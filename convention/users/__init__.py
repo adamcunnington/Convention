@@ -5,7 +5,7 @@ import convention
 from convention import models
 
 
-blueprint = flask.Blueprint("users", __name__)
+blueprint = flask.Blueprint("users", __name__, template_folder="../users/templates")
 login_manager = flask_login.LoginManager(convention.app)
 
 

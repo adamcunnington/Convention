@@ -25,7 +25,7 @@ def request_token():
     return {"token": user.generate_auth_token() + ":"}
 
 
-convention.app.add_url_rule("api/request-token", "api.request_token", request_token, methods=["POST"])
+convention.app.add_url_rule("/api/request-token", "api.request_token", request_token, methods=["POST"])
 
 
 @api.blueprint.route("/conventions/")
