@@ -41,7 +41,7 @@ Convention's web portal is based on [Flask](http://flask.pocoo.org/ "Flask"). It
 
 ## Launch
 
-Convention's web portal can be launched like any other flask application by using [flask run](http://flask.pocoo.org/docs/0.12/quickstart/, "Flask: Quickstart") but we recommend you run *convention\launch.py* as this ensures all aspects of the web application are loaded in the correct order and it will also create the database for you if it does not already exist.
+Convention's web portal can be launched like any other flask application by using [flask run](http://flask.pocoo.org/docs/0.12/quickstart/, "Flask: Quickstart") but we recommend that you run *convention\launch.py* as this ensures all aspects of the web application are loaded in the correct order and it will also create the database for you if it does not already exist.
 
 Assuming you are inside *C:\Python Projects\Convention*, execute:
 ```
