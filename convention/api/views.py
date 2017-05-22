@@ -15,6 +15,14 @@ def _get_convention_url(convention_key):
     return flask.url_for("api.get_convention", convention_key=convention_key, _external=True)
 
 
+@convention.app.route("/api/request-token", methods=["POST"])
+@decorators.add_cache_control()
+@api.password_auth.login_required
+@decorators.to_json
+def request_token():
+    return {"token": flask.g.current_user.generate_auth_token() + ":"}
+
+
 @api.blueprint.route("/conventions/")
 @decorators.add_etag
 @decorators.to_json

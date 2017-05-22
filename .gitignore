@@ -112,6 +112,9 @@ ENV/
 # proportion of contributors will probably not be using SublimeText
 # *.sublime-project
 
+### IntelliJ IDEA ###
+.idea/*
+
 # sftp configuration file
 sftp-config.json
 
@@ -156,6 +159,6 @@ $RECYCLE.BIN/
 
 
 # Convention Specifics
-convention.db
+# convention.db
 convention.sublime-project
 */instance/*.py

@@ -1,13 +1,11 @@
 import flask
-import flask_login
 from flask_oauthlib import client
 
 import convention
-from convention import models, utilities
+from convention import utilities
 
 
-blueprint = flask.Blueprint("auth", __name__)
-login_manager = flask_login.LoginManager(convention.app)
+blueprint = flask.Blueprint("auth", __name__, template_folder="../auth/templates")
 oauth = client.OAuth(convention.app)
 
 _CREDENTIALS = convention.app.config["OAUTH_CREDENTIALS"]
@@ -16,14 +14,3 @@ _GOOGLE_CREDENTIALS = _CREDENTIALS[_GOOGLE]
 oauth_providers = {
     _GOOGLE: utilities.GoogleOAuth(_GOOGLE, oauth, _GOOGLE_CREDENTIALS["key"], _GOOGLE_CREDENTIALS["secret"])
 }
-
-
-@blueprint.before_request
-@flask_login.login_required
-def _before_request():
-    pass
-
-
-@login_manager.user_loader
-def _load_user(user_key):
-    return models.User.query.get(int(user_key))
