@@ -15,17 +15,12 @@ def _get_convention_url(convention_key):
     return flask.url_for("api.get_convention", convention_key=convention_key, _external=True)
 
 
+@convention.app.route("/api/request-token", methods=["POST"])
 @decorators.add_cache_control()
+@api.password_auth.login_required
 @decorators.to_json
 def request_token():
-    data = flask.request.get_json(force=True)
-    user = models.Convention.query.get(data.get("email"))
-    if user is None or not user.verify_password(data.get("password")):
-        flask.abort(401)
-    return {"token": user.generate_auth_token() + ":"}
-
-
-convention.app.add_url_rule("/api/request-token", "api.request_token", request_token, methods=["POST"])
+    return {"token": flask.g.current_user.generate_auth_token() + ":"}
 
 
 @api.blueprint.route("/conventions/")
