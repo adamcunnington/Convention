@@ -1,6 +1,6 @@
 import flask
 import flask_login
-import requests
+# import requests
 
 import convention
 from convention import forms, models, users, utilities
@@ -9,9 +9,9 @@ from convention import forms, models, users, utilities
 @users.blueprint.route("/")
 def index():
     conventions = None
-    #if flask_login.current_user.is_authenticated:
-    #    token = requests.get(flask.url_for("api.request_token", _external=True)).json["token"]
-    #    conventions = requests.get(flask.url_for("api.get_conventions", _external=True), auth=(token.split(":")))["items"]
+    # if flask_login.current_user.is_authenticated:
+    #     token = requests.get(flask.url_for("api.request_token", _external=True)).json["token"]
+    #     conventions = requests.get(flask.url_for("api.get_conventions", _external=True), auth=(token.split(":")))["items"]
     return flask.render_template("users.html", conventions=conventions)
 
 
