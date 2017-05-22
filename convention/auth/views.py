@@ -29,7 +29,7 @@ def register():
     return flask.render_template("form.html", title="Register", form=register_form, submit_label="Register!")
 
 
-@auth.blueprint.route("/login", methods=("GET", "POST"))  # need to check that next is not dodgy. Perhaps implement in utilities?
+@auth.blueprint.route("/login", methods=("GET", "POST"))
 def login():
     if flask_login.current_user.is_authenticated:
         flask.flash("You are already logged in.")

@@ -65,6 +65,9 @@ class GoogleOAuth(OAuthProvider):
 
 
 def redirect(endpoint=None):
+    # http://flask.pocoo.org/snippets/63/ safe next checks
+    # http://flask.pocoo.org/snippets/62/ safe next checks
+    # need to understand the referrer too
     if endpoint is None:
         url = flask.request.args.get("next", flask.request.referrer) or (flask.url_for("users.index" if flask_login.current_user.is_authenticated
                                                                                        else "index"))
