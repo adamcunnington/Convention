@@ -1,6 +1,8 @@
 import convention
 import convention.views
+import convention.auth.views
 import convention.api.views
+import convention.users.views
 from convention import models
 
 
