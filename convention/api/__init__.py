@@ -1,5 +1,6 @@
 import flask
 import flask_httpauth
+import flask_login
 
 from convention import models
 
@@ -19,11 +20,15 @@ def _verify_credentials(email, password):
 
 @blueprint.before_request
 @token_auth.login_required
-def _before_request():
+def before_request():
     pass
 
 
 @token_auth.verify_password
 def _verify_token(token, password):
+    print(flask_login.current_user)
+    if flask_login.current_user.is_authenticated:
+        flask.g.current_user = flask_login.current_user
+        return True
     flask.g.current_user = models.User.verify_auth_token(token)
     return flask.g.current_user is not None
