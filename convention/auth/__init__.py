@@ -14,3 +14,4 @@ _GOOGLE_CREDENTIALS = _CREDENTIALS[_GOOGLE]
 oauth_providers = {
     _GOOGLE: utilities.GoogleOAuth(_GOOGLE, oauth, _GOOGLE_CREDENTIALS["key"], _GOOGLE_CREDENTIALS["secret"])
 }
+
